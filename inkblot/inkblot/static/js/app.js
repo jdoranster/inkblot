@@ -51,7 +51,6 @@ App.LessonsRoute = Ember.Route.extend({
 
 
 
-
 App.TaskView = Ember.View.extend ({
   templateName: 'task-view',
   attributeBindings: ['task-id','task-sound', 'task-word'],
@@ -66,9 +65,14 @@ App.TaskView = Ember.View.extend ({
   }.property('content.word'),
     
   click: function(evt) {
-    debugger;
-    var soundfile = this.content.sound;
-    return;
+
+    var audios = $(evt.currentTarget).children().find('audio');
+    if (audios.length > 0) {
+        audios[0].play();
+        $(evt.currentTarget).children().addClass('clicked')
+        // TODO: store the info that this task was completed
+    }
+    return false;
   }
 
 });
