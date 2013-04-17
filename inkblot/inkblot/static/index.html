@@ -10,9 +10,6 @@
 
 </head>
 <body>
-  <audio id='m-sound' src="m-recording.m4a"  ></audio>
-  <audio id='e-sound' src="e-recording.m4a"  ></audio>
-  <audio id='f-sound' src="f-recording.m4a"  ></audio>
 
   <script type="text/x-handlebars" >
     <div class="navbar">
@@ -73,10 +70,10 @@
   </script>
   
 <script type="text/x-handlebars" data-template-name="task-view">
-        <div class="demo span3">
+        <div class="span3">
           <audio   {{bindAttr src="view.content.sound"}}  ></audio>
-
-          <h2><span>{{view.content.word}}</span></h2>
+    
+          <a class="demo" href="#">{{view.content.word}}</a>
         </div>
 
 </script>

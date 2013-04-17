@@ -42,5 +42,6 @@ setup(name='inkblot',
       main = inkblot:main
       [console_scripts]
       initialize_inkblot_db = inkblot.scripts.initializedb:main
+      prepopulate_inkblot_db = inkblot.scripts.prepopulate:main
       """,
       )

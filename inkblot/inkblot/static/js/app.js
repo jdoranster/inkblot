@@ -1,12 +1,27 @@
-window.App = App =  Ember.Application.create();
+window.App = App =  Ember.Application.create({
+            LOG_TRANSITIONS: true,
+          });
+
+App.Adapter = DS.RESTAdapter.extend();
+
+
+//App.Adapter.map('App.Lesson', {
+//  tasks: {'embedded': 'always'}
+//});
 
 App.Store = DS.Store.extend({
   revision: 12,
   //adapter: 'DS.FixtureAdapter'
-  adapter: DS.RESTAdapter.extend({
+  adapter: App.Adapter.extend({
+  //adapter: DS.RESTAdapter.create({
     url: 'http://localhost:6543/test'
   })
 });
+
+//App.Store.adapter.serializer.map('App.Lesson', {
+//   tasks: {embedded: 'load'}
+//});
+
 
 App.Router.map(function() {
   // put your routes here
@@ -33,7 +48,8 @@ App.Lesson = DS.Model.extend({
   tasks: DS.hasMany('App.Task'),
   title: DS.attr('string'),
   instruction: DS.attr('string'),
-  ltype: DS.attr('string')
+  ltype: DS.attr('string'),
+
 });
 
 App.Task = DS.Model.extend({
@@ -69,7 +85,7 @@ App.TaskView = Ember.View.extend ({
     var audios = $(evt.currentTarget).children().find('audio');
     if (audios.length > 0) {
         audios[0].play();
-        $(evt.currentTarget).children().addClass('clicked')
+        $(evt.currentTarget).find('a').addClass('clicked')
         // TODO: store the info that this task was completed
     }
     return false;
@@ -77,9 +93,7 @@ App.TaskView = Ember.View.extend ({
 
 });
 
-App.Store.adapter.serializer.map('App.Lesson', {
-   tasks: {embedded: 'load'}
-});
+
 
 
 App.Lesson.FIXTURES = [{

@@ -2,9 +2,23 @@ from pyramid.response import Response
 from pyramid.view import view_config, view_defaults
 
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.orm import contains_eager
+
 import logging
 log = logging.getLogger(__name__)
 
+from pyramid.view import (
+    view_config,
+    forbidden_view_config,
+    )
+
+from pyramid.security import (
+    remember,
+    forget,
+    authenticated_userid,    
+    )
+
+from .security import USERS
 
 from .models import (
     DBSession,
@@ -12,6 +26,43 @@ from .models import (
     Lesson,
     Task,
     )
+
+
+import pdb
+
+@view_config(route_name='login', renderer='templates/login.pt')
+@forbidden_view_config(renderer='templates/login.pt')
+def login(request):
+    login_url = request.route_url('login')
+    referrer = request.url
+    if referrer == login_url:
+        referrer = '/' # never use the login form itself as came_from
+    came_from = request.params.get('came_from', referrer)
+    message = ''
+    login = ''
+    password = ''
+    if 'form.submitted' in request.params:
+        login = request.params['login']
+        password = request.params['password']
+        if USERS.get(login) == password:
+            headers = remember(request, login)
+            return HTTPFound(location = came_from,
+                             headers = headers)
+        message = 'Failed login'
+
+    return dict(
+        message = message,
+        url = request.application_url + '/login',
+        came_from = came_from,
+        login = login,
+        password = password,
+        )
+
+@view_config(route_name='logout')
+def logout(request):
+    headers = forget(request)
+    return HTTPFound(location = request.route_url('home'),
+                     headers = headers)
 
 
 @view_config(route_name='home', renderer='templates/mytemplate.pt')
@@ -97,24 +148,33 @@ dummy_tasks = {
 
 @view_config(route_name='test_lessons', renderer='json')
 def test_lessons(request):
-    
-    return (dummy_lessons)
-
+    if request.method == 'GET':
+        try:
+            lessons = DBSession.query(Lesson).\
+                                outerjoin(Lesson.tasks).\
+                                options(contains_eager(Lesson.tasks)).all()
+            log.debug("lessons: %s" % [ dict(u) for u in lessons])
+            return ({'lessons':[ dict(u) for u in lessons]})
+        except DBAPIError as e:
+            return Response("Unable to access DB: %s" % e, content_type='text/plain', status_int=500)            
+    else:
+        log.error("Not yet supporting method %s for lessons" % request.method)
+        return []
 
 
 @view_config(route_name='test_lesson', renderer='json', request_method=['GET','PUT', 'DELETE'])
 def test_lesson(request):
     if request.method == 'GET':
         if 'id' in request.matchdict:
-            id = request.matchdict['id']
-            log.debug("---------------- lesson id = %s,%s" % (id, id.__class__))
-            lessons=dummy_lessons['lessons']
-            for lesson in lessons:
-                log.debug("lesson['id'] = %s,%s" % (lesson['id'], lesson['id'].__class__))
-                if id == lesson['id']:
-                    return lesson
-            
-        return []
+            l_id = request.matchdict['id']
+            log.debug("---------------- lesson id = %s,%s" % (l_id, l_id.__class__))
+            try:
+                lesson = DBSession.query(Lesson).\
+                                   outerjoin(Lesson.tasks).\
+                                   filter(Lesson.id == l_id).first()
+                return ({'lesson':dict(lesson)})
+            except DBAPIError as e:
+                return Response("Unable to access DB: %s" % e, content_type='text/plain', status_int=500)            
     else:
         log.error("Not yet supporting method %s for lesson" % request.method)
         return []
@@ -128,14 +188,16 @@ def test_tasks(request):
         if 'ids[]' in request.params:
             ids = request.params.getall('ids[]')
             log.debug("---------------- task ids = %s,%s" % (ids, ids.__class__))
-            tasks=dummy_tasks['tasks']
-            result={'tasks':[]}
-            for task in tasks:
-                log.debug("task['id'] = %s,%s" % (task['id'], task['id'].__class__))
-                if str(task['id']) in ids:
-                    result['tasks'].append(task)
+            try:
+                tasks = DBSession.query(Task).filter(Task.id.in_( ids)).all()
+                log.debug("------ Found tasks:  %s" % tasks)
+                return ({'tasks':[dict(u) for u in tasks]})
+            except DBAPIError as e:
+                return Response("Unable to access DB: %s" % e, content_type='text/plain', status_int=500)
             
-        return result
+        log.error("No task ids supplied")
+        return [{"tasks":[]}]
+                        
     else:
         log.error("Not yet supporting method %s for tasks" % request.method)
         return []

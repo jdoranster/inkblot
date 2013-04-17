@@ -19,7 +19,16 @@ from sqlalchemy.orm import (
     column_property,
     )
 
-
+from pyramid.security import (
+    Allow,
+    Everyone,
+    )
+class RootFactory(object):
+    __acl__ = [ (Allow, Everyone, 'view'),
+                (Allow, 'group:editors', 'edit') ]
+    def __init__(self, request):
+        pass
+    
 from zope.sqlalchemy import ZopeTransactionExtension
 #from sqlalchemy_traversal import TraversalMixin
 
@@ -49,7 +58,8 @@ class Lesson(Base):
 class Task(Base):
     __tablename__ = 'task'
     id = Column(Integer, primary_key=True)
-    page =  Column(Unicode(255), default=u'')
+    word =  Column(Unicode(255), default=u'')
+    sound = Column(Unicode(255), default=u'')
     lesson_id = Column(Integer, ForeignKey('lesson.id'))
     created = Column(DateTime, default=datetime.datetime.utcnow)
     edited = Column(DateTime, default=datetime.datetime.utcnow)

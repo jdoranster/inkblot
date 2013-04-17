@@ -37,3 +37,10 @@ def main(argv=sys.argv):
     with transaction.manager:
         admin = User(name='admin', password=u'2admin')
         DBSession.add(admin)
+
+        
+
+        
+        
+
+

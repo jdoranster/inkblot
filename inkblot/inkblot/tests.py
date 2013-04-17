@@ -18,7 +18,13 @@ class TestMyView(unittest.TestCase):
         DBSession.configure(bind=engine)
         Base.metadata.create_all(engine)
         with transaction.manager:
-            model = MyModel(name='one', value=55)
+            user = User(name='tester', password=u'test')
+            DBSession.add(user)
+            lesson1 = Lesson( title = "Test Lesson",instruction = "Select a phoneme and listen to the sound", ltype = "phoneme")
+            task1 = Task(word = "M", sound = "m-recording.m4a")
+            task2 = Task(word = "E", sound = "e-recording.m4a")
+            lesson1.tasks.extend([task1,task2])
+            user.lessons.append(lesson1)
             DBSession.add(model)
 
     def tearDown(self):
@@ -26,8 +32,10 @@ class TestMyView(unittest.TestCase):
         testing.tearDown()
 
     def test_it(self):
-        from .views import my_view
+        from .views import test_lessons
         request = testing.DummyRequest()
-        info = my_view(request)
-        self.assertEqual(info['one'].name, 'one')
+        info = test_lessons(request)
+        print ("info %r" % info)
+        self.assertNEqual(info['lessons'])
+        self.assertEqual(info['lessons'].name, 'one')
         self.assertEqual(info['project'], 'inkblot')

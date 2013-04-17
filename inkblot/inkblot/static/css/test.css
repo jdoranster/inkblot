@@ -1,15 +1,16 @@
 .demo {
   font-family: helvetica, sans-serif;
-  font-size: 24px;
+  font-size: 48px;
   color: #FF4A9E;
   font-style: normal;
   font-weight: bold;
   font-variant: small-caps;
   text-align: left;
   letter-spacing: 0px;
-  line-height: 20px;
+  line-height: 75px;
 }
 .clicked {
   color: #5EFF64;
 }
+
 
