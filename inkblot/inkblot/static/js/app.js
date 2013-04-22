@@ -88,15 +88,11 @@ App.LessonController = Ember.ObjectController.extend({
 
 });
 
-Handlebars.registerHelper('newrow', function(idx, options) {
+Handlebars.registerHelper('newrow', function(idx, rowmax, options) {
               /*var idx = view.contentIndex;*/
-              if (this.idx === 0 )
-                return options.inverse(this);
-              if (this.idx % 2 === 0){
-                return options.fn(this);;
-              }else{
-                return options.inverse(this);
-              }   
+              var index = Ember.get(this, idx);
+              if (index != 0  && index % rowmax === 0)
+                return options.fn(this);
 
 });  
 

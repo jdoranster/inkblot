@@ -69,12 +69,11 @@
   
 <script type="text/x-handlebars" data-template-name="tasks-view">
         
-          <div class="row">
+          <div class="row-fluid">
         {{#each view.tasksWithIndices}}
-        
-          {{#newrow this.idx}}
+          {{#newrow this.idx 3}}
            </div>
-           <div class="row">
+           <div class="row-fluid">
           {{/newrow}}
         
           {{view App.TaskView contentBinding='this.task'}}
@@ -85,14 +84,13 @@
 </script>
 
 <script type="text/x-handlebars" data-template-name="task-view">
-        <div class="demo span6">
+        <div class="demo span4">
           <audio   {{bindAttr src="this.task.sound"}}  ></audio>
     
           <a class="button demo large" href="#">{{this.task.word}}</a>
         </div>
 
 </script>
-
 
   
   <script src="js/libs/jquery-1.9.1.js"></script>
