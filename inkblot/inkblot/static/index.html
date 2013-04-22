@@ -62,18 +62,33 @@
     <hr>
     <div class="below-the-fold">
       {{model.instruction}}
-      {{#each task in model.tasks}}
-        {{view App.TaskView contentBinding="task"}}
-     {{/each}}
+      {{view App.TasksView contentBinding='model.tasks'}}
+
     </div>
-    
   </script>
   
+<script type="text/x-handlebars" data-template-name="tasks-view">
+        
+          <div class="row">
+        {{#each view.tasksWithIndices}}
+        
+          {{#newrow this.idx}}
+           </div>
+           <div class="row">
+          {{/newrow}}
+        
+          {{view App.TaskView contentBinding='this.task'}}
+
+        {{/each}}
+          </div>
+
+</script>
+
 <script type="text/x-handlebars" data-template-name="task-view">
-        <div class="span3">
-          <audio   {{bindAttr src="view.content.sound"}}  ></audio>
+        <div class="demo span6">
+          <audio   {{bindAttr src="this.task.sound"}}  ></audio>
     
-          <a class="demo" href="#">{{view.content.word}}</a>
+          <a class="button demo large" href="#">{{this.task.word}}</a>
         </div>
 
 </script>

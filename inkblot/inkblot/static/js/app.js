@@ -65,21 +65,56 @@ App.LessonsRoute = Ember.Route.extend({
     }
 });
 
+App.LessonController = Ember.ObjectController.extend({
+  rows: function() {
+    var rows = []; //This is the array of rows with tasks that we will return
+    const ROWMAX = 2;
+    var currow = [];
+    this.get('content.tasks').forEach(function(task) {
+      if (currow.length % ROWMAX == 0) {
+        if (currow.length != 0) {
+          rows.push(currow);
+        }
+        currow = [];
+      }
+      currow.push(task);
+    });
+    if (currow.length != 0) {
+      rows.push(currow);
+    }
+    return rows;
+  }.property('tasks.@each', 'tasks.@each.isLoaded'),
+  
 
+});
+
+Handlebars.registerHelper('newrow', function(idx, options) {
+              /*var idx = view.contentIndex;*/
+              if (this.idx === 0 )
+                return options.inverse(this);
+              if (this.idx % 2 === 0){
+                return options.fn(this);;
+              }else{
+                return options.inverse(this);
+              }   
+
+});  
+
+
+
+App.TasksView = Ember.View.extend({
+  templateName: 'tasks-view',
+  tasksWithIndices: function() {
+      return this.content.map(function(item, index) {
+        return {task: item, idx: index};
+      });
+    }.property('tasks.@each', 'tasks.@each.task')
+
+});
 
 App.TaskView = Ember.View.extend ({
   templateName: 'task-view',
-  attributeBindings: ['task-id','task-sound', 'task-word'],
-  'task-id': function() {
-        return this.content.id;
-  }.property('content.id'),
-  'task-sound': function() {
-        return this.content.sound;
-  }.property('content.sound'),
-  'task-word': function() {
-        return this.content.word;
-  }.property('content.word'),
-    
+       
   click: function(evt) {
 
     var audios = $(evt.currentTarget).children().find('audio');
