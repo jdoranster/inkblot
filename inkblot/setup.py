@@ -7,7 +7,7 @@ README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
-    'pyramid',
+    'pyramid>1.3',
     'SQLAlchemy',
     'transaction',
     'pyramid_tm',
@@ -16,6 +16,9 @@ requires = [
     'sqlalchemy_traversal',
     'waitress',
     'mysql-python',
+    'cryptacular',
+    'waitress',
+    'pycrypto',
     ]
 
 setup(name='inkblot',
@@ -35,9 +38,9 @@ setup(name='inkblot',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      test_suite='inkblot',
+      test_suite='inkblot.tests',
       install_requires=requires,
-      entry_points="""\
+      entry_points="""
       [paste.app_factory]
       main = inkblot:main
       [console_scripts]

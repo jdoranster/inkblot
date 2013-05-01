@@ -54,8 +54,8 @@ App.Lesson = DS.Model.extend({
 
 App.Task = DS.Model.extend({
   lesson: DS.belongsTo('App.Lesson'),
-  word: DS.attr('string'),
-  sound: DS.attr('string'),
+  prompt: DS.attr('string'),
+  result: DS.attr('string'),
 });
 
 

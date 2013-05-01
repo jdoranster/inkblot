@@ -75,7 +75,7 @@
            </div>
            <div class="row-fluid">
           {{/newrow}}
-        
+           {{log task}}
           {{view App.TaskView contentBinding='this.task'}}
 
         {{/each}}
@@ -85,9 +85,9 @@
 
 <script type="text/x-handlebars" data-template-name="task-view">
         <div class="demo span4">
-          <audio   {{bindAttr src="this.task.sound"}}  ></audio>
+          <audio   {{bindAttr src="this.task.result"}}  ></audio>
     
-          <a class="button demo large" href="#">{{this.task.word}}</a>
+          <a class="button demo large" href="#">{{this.task.prompt}}</a>
         </div>
 
 </script>

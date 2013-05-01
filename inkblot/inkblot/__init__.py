@@ -16,6 +16,8 @@ from .models import (
 import sqlalchemy as sa
 from datetime import datetime
 import inflect
+
+# hack to allow JSON serialization of sqlalchemy objects.
 def todict(self):
     def convert_datetime(value):
         return value.strftime("%Y-%m-%d %H:%M:%S")
@@ -60,7 +62,7 @@ def main(global_config, **settings):
     Base.todict = todict
     Base.__iter__ = iterfunc
     authn_policy = AuthTktAuthenticationPolicy(
-        'sosecret', callback=groupfinder, hashalg='sha512')
+        'mysecret', callback=groupfinder, hashalg='sha512')
     authz_policy = ACLAuthorizationPolicy()
     config = Configurator(settings=settings, root_factory='inkblot.models.RootFactory')
     config.set_authentication_policy(authn_policy)

@@ -27,7 +27,6 @@ from .models import (
     Task,
     )
 
-
 import pdb
 
 @view_config(route_name='login', renderer='templates/login.pt')
@@ -65,7 +64,8 @@ def logout(request):
                      headers = headers)
 
 
-@view_config(route_name='home', renderer='templates/mytemplate.pt')
+@view_config(route_name='home', renderer='templates/mytemplate.pt',
+             permission='view')
 def my_view(request):
     try:
         one = DBSession.query(MyModel).filter(MyModel.name == 'one').first()
@@ -146,8 +146,11 @@ dummy_tasks = {
     
 }
 
-@view_config(route_name='test_lessons', renderer='json')
+@view_config(route_name='test_lessons', renderer='json', permission='view')
 def test_lessons(request):
+    from pyramid.security import authenticated_userid
+    logged_in = authenticated_userid(request)
+    
     if request.method == 'GET':
         try:
             lessons = DBSession.query(Lesson).\
@@ -162,7 +165,7 @@ def test_lessons(request):
         return []
 
 
-@view_config(route_name='test_lesson', renderer='json', request_method=['GET','PUT', 'DELETE'])
+@view_config(route_name='test_lesson', renderer='json', request_method=['GET','PUT', 'DELETE'], permission='view')
 def test_lesson(request):
     if request.method == 'GET':
         if 'id' in request.matchdict:
@@ -180,7 +183,7 @@ def test_lesson(request):
         return []
 
 
-@view_config(route_name='test_tasks', renderer='json', request_method=['GET','PUT', 'DELETE'])
+@view_config(route_name='test_tasks', renderer='json', request_method=['GET','PUT', 'DELETE'], permission='view')
 def test_tasks(request):
     if request.method == 'GET':
         log.debug("^^^^^^^ request.params: %r" % request.params)
