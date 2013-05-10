@@ -1,5 +1,6 @@
 from pyramid.response import Response
 from pyramid.view import view_config, view_defaults
+from json import loads
 
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import contains_eager
@@ -15,10 +16,9 @@ from pyramid.view import (
 from pyramid.security import (
     remember,
     forget,
-    authenticated_userid,    
+    authenticated_userid,   
+    effective_principals,
     )
-
-from .security import USERS
 
 from .models import (
     DBSession,
@@ -29,39 +29,119 @@ from .models import (
 
 import pdb
 
-@view_config(route_name='login', renderer='templates/login.pt')
-@forbidden_view_config(renderer='templates/login.pt')
-def login(request):
-    login_url = request.route_url('login')
-    referrer = request.url
-    if referrer == login_url:
-        referrer = '/' # never use the login form itself as came_from
-    came_from = request.params.get('came_from', referrer)
-    message = ''
-    login = ''
-    password = ''
-    if 'form.submitted' in request.params:
-        login = request.params['login']
-        password = request.params['password']
-        if USERS.get(login) == password:
-            headers = remember(request, login)
-            return HTTPFound(location = came_from,
-                             headers = headers)
-        message = 'Failed login'
+from webob import Response, exc
+from cornice import Service
 
-    return dict(
-        message = message,
-        url = request.application_url + '/login',
-        came_from = came_from,
-        login = login,
-        password = password,
-        )
 
-@view_config(route_name='logout')
-def logout(request):
+users = Service(name='users', path='/users', description="Users")
+messages = Service(name='messages', path='/', description="Messages")
+
+
+
+
+#
+# Helpers
+#
+def _create_token():
+    return binascii.b2a_hex(os.urandom(20))
+
+
+class _401(exc.HTTPError):
+    def __init__(self, msg='Unauthorized'):
+        body = {'status': 401, 'message': msg}
+        Response.__init__(self, json.dumps(body))
+        self.status = 401
+        self.content_type = 'application/json'
+
+
+def valid_token(request):
+    header = 'X-Messaging-Token'
+    token = request.headers.get(header)
+    if token is None:
+        raise _401()
+
+    token = token.split('-')
+    if len(token) != 2:
+        raise _401()
+
+    user, token = token
+
+    valid = user in _USERS and _USERS[user] == token
+    if not valid:
+        raise _401()
+
+    request.validated['user'] = user
+
+
+def unique(request):
+    name = request.body
+    if User.get_by_name(name):
+        request.errors.add('url', 'name', 'This user exists!')
+    
+        user = {'name': name, 'token': _create_token()}
+        request.validated['user'] = user
+
+#
+# Services
+#
+
+#
+# User Management
+#
+
+
+@users.get(validators=valid_token)
+def get_users(request):
+    """Returns a list of all users."""
+    return {'users': _USERS.keys()}
+
+
+@users.post(validators=unique)
+def create_user(request):
+    """Adds a new user."""
+    user = request.validated['user']
+    _USERS[user['name']] = user['token']
+    return {'token': '%s-%s' % (user['name'], user['token'])}
+
+
+@users.delete(validators=valid_token)
+def del_user(request):
+    """Removes the user."""
+    name = request.validated['user']
+    del _USERS[name]
+    return {'Goodbye': name}
+
+
+mandatory=set(['name','password'])
+@view_config(route_name='signin', renderer='json')
+def sign_in(request):
+    parms = loads(request.body, request.charset)
+    message=''
+    if mandatory <= set(parms):
+        password = parms['password']
+        name = parms['name']
+        remember_me = False
+        if 'remember' in parms:
+            remember_me = parms['remember']
+        if User.check_password(name, password):
+            user = User.get_by_name(name)
+            headers = remember(request, name)
+            # headers of the form ...
+            # [('Set-Cookie', 'X-Messaging-Token="fc5b3c1c09bbacfb8942877ec299c33650c572536b7fbb2d8aaea0bf09a4f8490df76334305e3b8a2e09ab8b513cd2e8a074f1b4e3b7521c4d167910656b485a518be2d9YWRtaW4%3D!userid_type:b64unicode"; Path=/'),]
+            cookies = [x[1] for x in headers if x[1].startswith('X-Messaging-Token')]
+            #
+            auth = cookies[0].split('"')[1]
+            request._response_headerlist_set(headers)            
+            return  {'status':'OK', 'userid': user.id, 'authToken': auth}
+        else:
+            return {'status': 'ERROR'} 
+    
+
+@view_config(route_name='signout', renderer='json')
+def sign_out(request):
     headers = forget(request)
-    return HTTPFound(location = request.route_url('home'),
-                     headers = headers)
+    request._response_headerlist_set(headers)
+    return {'status':'OK'}
 
 
 @view_config(route_name='home', renderer='templates/mytemplate.pt',
@@ -88,69 +168,13 @@ might be caused by one of the following things:
 After you fix the problem, please restart the Pyramid application to
 try it again.
 """
-dummy_lessons = {"lessons":[
-            {
-                "id" : 1,
-                "title": "First Lesson",
-                "instruction": "Select a phoneme and listen to the sound",
-                "ltype" : "phoneme",
-                "task_ids" : [ 4,5 ],
-           },
-            {
-                "id" : 2,
-                "title": "Second Lesson",
-                "instruction": "Select the combination of phonemes to make a word",
-                "ltype" : "phoneme",
-                "task_ids":[ 6, 7]
 
-            },
-            {
-                "id" : 3,
-                "title": "Third Lesson",
-                "instruction": "Find something new to say",
-                "ltype" : "drop-target",
-                "task_ids": [],
-                
-            },  
-        ]
-    }
-
-dummy_tasks = {
-    "tasks" : [
-            {
-                "id": 4,
-                "word":"M",
-                "sound" : "m-recording.m4a",
-                "lesson_id" : 1,
-            },
-            {
-                "id": 5,
-                "word":"E",
-                "sound" : "e-recording.m4a",
-                "lesson_id" : 1,
-            },
-            {
-                "id": 6,
-                "word": "B",
-                "sound": "b-recording.m4a",
-                "lesson_id" : 2,
-            },
-            {
-                "id": 7,
-                "word":"F",
-                "sound": "f-recording.m4a",
-                "lesson_id" : 2,
-            },            
-        ]
-        
-    
-}
 
 @view_config(route_name='test_lessons', renderer='json', permission='view')
 def test_lessons(request):
     from pyramid.security import authenticated_userid
     logged_in = authenticated_userid(request)
-    
+    log.debug('logged_in = %s' % logged_in)
     if request.method == 'GET':
         try:
             lessons = DBSession.query(Lesson).\
@@ -205,3 +229,9 @@ def test_tasks(request):
         log.error("Not yet supporting method %s for tasks" % request.method)
         return []
 
+@view_config(route_name='whoami', permission='authenticated', renderer='json')
+def whoami(request):
+    """ Return autenticated user's credentials """
+    username = authenticated_userid(request)
+    principals = effective_principals(request)
+    return {'username':username, 'principals': principals}

@@ -1,4 +1,6 @@
 0.0
 ---
 
--  Initial version
+-  Initial version 
+
+Provides working example of emberjs, authentication, & pyramid app

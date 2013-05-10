@@ -7,6 +7,7 @@ from inkblot.models import (
     DBSession, 
     Base, 
     User, 
+    Group,
     Lesson, 
     Task
     )
@@ -16,7 +17,7 @@ def _registerRoutes(config):
     config.add_route('view_page', '{pagename}')
 
 
-def _initTestDB():
+def initTestDB():
     from sqlalchemy import create_engine
     engine = create_engine('sqlite://')
     DBSession.configure(bind=engine)
@@ -61,7 +62,7 @@ def _make_task(session, prompt, result, next_step=None, step=0):
 
 class TestUserModels(unittest.TestCase):
     def setUp(self):
-        self.session = _initTestDB()
+        self.session = initTestDB()
 
     def tearDown(self):
         self.session.remove()
@@ -99,7 +100,7 @@ class TestUserModels(unittest.TestCase):
 class TestLessonModels(unittest.TestCase):
     
     def setUp(self):
-        self.session = _initTestDB()
+        self.session = initTestDB()
 
     def tearDown(self):
         self.session.remove()
@@ -126,7 +127,7 @@ class TestLessonModels(unittest.TestCase):
         
 class TestTaskModels(unittest.TestCase):
     def setUp(self):
-        self.session = _initTestDB()
+        self.session = initTestDB()
 
     def tearDown(self):
         self.session.remove()
@@ -154,10 +155,18 @@ class TestTaskModels(unittest.TestCase):
      
 class TestAllModels(unittest.TestCase):
     def setUp(self):
-        self.session = _initTestDB()
+        self.session = initTestDB()
 
     def tearDown(self):
-        self.session.remove()      
+        self.session.remove()    
+        
+    def test_add_user_groups(self):
+        user = self.session.query(User).filter(User.name == 'tester').first()
+        self.assertEqual( len(user.lessons), 0)
+        ged = self.session.query(Group).filter(Group.name == 'editor').first()
+        user.groups.append(ged)
+        self.assertEqual(len(user.groups), 1)
+        
         
     def test_add_lessons(self):
         user = self.session.query(User).filter(User.name == 'tester').first()
@@ -185,7 +194,11 @@ class TestAllModels(unittest.TestCase):
         self.assertEqual(t2.step, 1)
         l1.tasks.remove(t1)
         self.assertEqual(len(l1.tasks), 1)
-        
+        user = self.session.query(User).filter(User.name == 'tester').first()
+        self.assertEqual(len(user.tasks), 0)
+        user.tasks.append(t2)
+        self.assertEqual(len(user.tasks), 1)
+
     def test_pair_tasks(self):
         l1 = self.session.query(Lesson).filter(Lesson.id == 1).first()
         t1 = self.session.query(Task).filter(Task.prompt == 'X').first()

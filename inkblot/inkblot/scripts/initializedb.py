@@ -12,6 +12,7 @@ from pyramid.paster import (
 from inkblot.models import (
     DBSession,
     User,
+    Group,
     Lesson,
     Task,
     Base,
@@ -37,7 +38,13 @@ def main(argv=sys.argv):
     with transaction.manager:
         admin = User(name='admin', password=u'2admin', email='root@localhost')
         DBSession.add(admin)
-
+        g1 = Group(name='admin')
+        DBSession.add(g1)
+        g2 = Group(name='viewer')
+        DBSession.add(g2)
+        g3 = Group(name='editor')
+        DBSession.add(g3)
+        admin.groups.extend([g1,g2,g3])
         
 
         

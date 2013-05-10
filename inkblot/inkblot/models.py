@@ -55,20 +55,23 @@ def _create_by_task(task):
 def _create_by_group(group):
     return UserGroup(group=group)
    
+def _create_by_lesson(lesson):
+    return UserLesson(lesson=lesson)
 
 class User(Base):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(255), unique=True, nullable=False)
     password = Column(Unicode(60), nullable=False)
-    lessons = relationship("Lesson", order_by="Lesson.id", backref="user")
+    email = Column(Unicode(50), unique=True)    
+    authentication_token = Column(Unicode(255), unique=True)
+    lessons =  association_proxy('user_lessons', 'lesson', creator=_create_by_lesson)
+    
     last_logged = Column(DateTime, default=datetime.datetime.utcnow)
-    email = Column(Unicode(50))    
     progress = Column(Integer, default=0)
     # association proxy of "user_tasks" collection
     # to "tasks" attribute
     groups = association_proxy('user_groups', 'group', creator=_create_by_group)
-    
 
     tasks = association_proxy('user_tasks', 'task', creator=_create_by_task)
     
@@ -105,6 +108,10 @@ class User(Base):
         return DBSession.query(cls).filter(cls.name == name).first()
 
     @classmethod
+    def get_by_email(cls, email):
+        return DBSession.query(cls).filter(cls.email == email).first()
+
+    @classmethod
     def check_password(cls, name, password):
         user = cls.get_by_name(name)
         if not user:
@@ -131,7 +138,10 @@ class UserGroup(Base):
     created = Column(DateTime, default=datetime.datetime.utcnow)
     
     group = relationship(Group, lazy='joined')
-    
+    user = relationship(User,
+                        backref=backref("user_groups", 
+                                        cascade = "all, delete-orphan")
+                        )
 
 class Lesson(Base):
     __tablename__ = 'lesson'
@@ -140,13 +150,30 @@ class Lesson(Base):
     title = Column(Unicode(255), unique=True, nullable=False)
     instruction = Column(Unicode(255), default=u'')
 
-    user_id = Column(Integer, ForeignKey('user.id'))
     tasks = relationship("Task", 
                          order_by="Task.step",
                          backref=backref("lesson"),
                          collection_class=ordering_list('step'))
     created = Column(DateTime, default=datetime.datetime.utcnow)
     edited = Column(DateTime, default=datetime.datetime.utcnow)
+    
+
+class UserLesson(Base):
+    __tablename__ = 'user_lesson'
+    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
+    lesson_id = Column(Integer, ForeignKey('lesson.id'), primary_key=True)
+    created = Column(DateTime, default=datetime.datetime.utcnow)
+
+    lesson = relationship(Lesson, lazy='joined')
+    user = relationship(User,
+                        backref=backref("user_lessons", 
+                                        cascade = "all, delete-orphan")
+                        )
+    
+    def __init__(self, user=None, lesson=None):
+         
+        if user: self.user_id = user.id
+        if lesson: self.lesson_id = lesson.id
 
     
 class Task(Base):
@@ -174,6 +201,10 @@ class UserTask(Base):
     created = Column(DateTime, default=datetime.datetime.utcnow)
 
     task = relationship(Task, lazy='joined')
+    user = relationship(User,
+                        backref=backref("user_tasks", 
+                                        cascade = "all, delete-orphan")
+                        )
     
     def __init__(self, user=None, task=None):
          
@@ -185,10 +216,10 @@ class UserTask(Base):
 
 class RootFactory(object):
     __acl__ = [
-        (Allow, Everyone, 'view'),
-        #(Allow, Authenticated, 'view'),
-        (Allow, 'group:editor', ('add', 'edit')),
-        (Allow, 'group:admin', ALL_PERMISSIONS),
+        #(Allow, 'group:view', 'view'),
+        (Allow, Authenticated, 'view'),
+        (Allow, 'editor', ('add', 'edit')),
+        (Allow, 'admin', ALL_PERMISSIONS),
     ]
 
     def __init__(self, request):

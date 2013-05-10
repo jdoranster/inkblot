@@ -18,6 +18,11 @@
           <ul class="nav">
             <li>{{#linkTo 'lessons'}}Lessons{{/linkTo}}</li>
             <li>{{#linkTo 'about'}}About{{/linkTo}}</li>
+            {{#if Auth.authToken}}
+            <li>{{#linkTo 'sign_out'}}Sign Out{{/linkTo}}</li>
+            {{else}}
+            <li>{{#linkTo 'sign_in'}}Sign In{{/linkTo}}</li>
+            {{/if}}
           </ul>
       </div>
     </div>
@@ -92,13 +97,66 @@
 
 </script>
 
-  
+
+<script type="text/x-handlebars" data-template-name="auth">
+  {{#if Auth.authToken}}
+    {{view App.SignOutView}}
+  {{else}}
+    {{view App.SignInView}}
+  {{/if}}
+</script>
+
+<script type="text/x-handlebars" data-template-name="sign_in">
+  <form>
+    <label>Name</label>
+    {{view App.TextField type="name" valueBinding="name" autocomplete='off' autofocus='on'}}
+    <label>Password</label>
+    {{view Ember.TextField type="password" valueBinding="password"}}
+    <br>
+    <button {{action "signIn"}} class="btn" type="submit">Sign In</button>
+  </form>
+</script>
+
+<script type="text/x-handlebars" data-template-name="sign_out">
+  <form>
+    <button {{action "signOut"}} class="btn" type="submit">Sign Out</button>
+  </form>
+</script>
+
+<script type="text/x-handlebars" data-template-name="new_user">
+  {{#if validationError}}
+	<div class="alert alert-error">
+	  <button type="button" class="close" data-dismiss="alert" {{action "dismissError"}}>&times;</button>
+	  {{validationErrors}}}
+	</div>
+  {{/if}}
+    <legend>Sign Up</legend>
+    <form>
+	<label>Name<br>
+		{{view Ember.TextField valueBinding='name' name='name' disabledBinding='validationError'}}
+	</label>
+	<label>Email<br>
+		{{view Ember.TextField valueBinding='email' name='email' type="email" disabledBinding='validationError'}}
+	</label>
+	<label>Password<br>
+		{{view Ember.TextField type="password" valueBinding='password' name='password' disabledBinding='validationError'}}
+	</label>
+	<label>Password confirmation<br>
+		{{view Ember.TextField type="password" valueBinding='password_confirmation' name='password_confirmation' disabledBinding='validationError'}}
+	</label>
+	<br>
+	<button {{action "save"}} {{bindAttr class=":btn validationError:disabled"}}>Sign Up</button>
+	<button type="button" class="btn" {{action "cancel"}}>Cancel</button>
+    </form>
+</script>
+
   <script src="js/libs/jquery-1.9.1.js"></script>
   <script src="js/libs/handlebars-1.0.0-rc.3.js"></script>
   <script src="js/libs/ember-1.0.0-rc.2.js"></script>
   <script src="js/libs/ember-data.js"></script>
   <script src="js/libs/showdown.js"></script>
   <script src="js/libs/moment.js"></script>
+  <script src="js/libs/ember-auth.js"></script>
   <script src="js/app.js"></script>
 
 </body>

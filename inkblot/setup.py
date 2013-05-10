@@ -19,6 +19,9 @@ requires = [
     'cryptacular',
     'waitress',
     'pycrypto',
+    'cornice',
+    'mozsvc',
+    'pyramid_whoauth',
     ]
 
 setup(name='inkblot',
@@ -28,6 +31,9 @@ setup(name='inkblot',
       classifiers=[
         "Programming Language :: Python",
         "Framework :: Pyramid",
+        "Client :: Emberjs",
+        "Authentication :: ember_auth",
+        "Authentication :: AuthTktAuthenticationPolicy",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         ],
